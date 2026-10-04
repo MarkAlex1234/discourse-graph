@@ -12,9 +12,10 @@ export const getConvertibleShapeText = (
   if (shape.type === "image") return "";
   if (!TEXT_SHAPE_TYPES.includes(shape.type)) return null;
   if (!("text" in shape.props)) return null;
-  const text = shape.props.text.trim();
+  const { text } = shape.props;
   // Geo and note shapes convert only when they carry text.
-  return shape.type === "text" || text ? text : null;
+  if (shape.type !== "text" && !text.trim()) return null;
+  return text;
 };
 
 export const uploadImageShapeToRoam = async ({
@@ -51,7 +52,7 @@ export const replaceShapeWithDiscourseNode = async ({
   text: string;
   uid: string;
 }): Promise<void> => {
-  const { x, y } = shape;
+  const { x, y, parentId } = shape;
   editor.deleteShapes([shape.id]);
   const { h, w, imageUrl } = await calcCanvasNodeSizeAndImg({
     nodeText: text,
@@ -75,6 +76,8 @@ export const replaceShapeWithDiscourseNode = async ({
       },
       x,
       y,
+      // x/y are parent-relative; without parentId tldraw reads them as page coordinates.
+      parentId,
     },
   ]);
 };
